@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  /* Fonts */
+  --font-sans: "Inter", sans-serif;
+  --font-heading: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Brand Colors (Same in both themes) */
+  --color-acit-teal: #0F8A85; 
+  --color-acit-orange: #D35400;
+  --color-acit-navy: #0A192F;
+}
+
+/* Light Mode Variables */
+:root {
+  --acit-bg: #F8F9FB;
+  --acit-surface: #FFFFFF;
+  --acit-border: #E5E7EB;
+  --acit-text: #0A192F;
+  --acit-muted: #6B7280;
+}
+
+/* Dark Mode Variables */
+.dark {
+  --acit-bg: #0A0E14; /* Deep almost-black */
+  --acit-surface: #111827; /* Slate gray for cards */
+  --acit-border: #1F2937;
+  --acit-text: #E6EDF3; /* Off-white */
+  --acit-muted: #8B949E;
+}
+
+/* In src/index.css, update the @layer base block */
+@layer base {
+  html {
+    background-color: var(--acit-bg);
+  }
+  body {
+    background-color: var(--acit-bg);
+    color: var(--acit-text);
+    font-family: var(--font-sans);
+    margin: 0;
+    min-height: 100vh;
+    /* Smooth transition fallback for browsers without View Transition API */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+/* View Transition Wipe Effect */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 999;
+  /* Create a circle starting from the mouse click */
+  clip-path: circle(0% at var(--mouse-x, 50%) var(--mouse-y, 50%));
+  animation: circle-expand 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes circle-expand {
+  100% {
+    clip-path: circle(150% at var(--mouse-x, 50%) var(--mouse-y, 50%));
+  }
+}
