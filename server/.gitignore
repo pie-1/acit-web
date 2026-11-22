@@ -26,10 +26,6 @@ coverage/
 dist/
 build/
 
-# OS files
-.DS_Store
-Thumbs.db
-
 # IDE
 .vscode/
 .idea/
