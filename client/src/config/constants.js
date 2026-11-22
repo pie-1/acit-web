@@ -4,6 +4,7 @@ export const SITE_CONFIG = {
   fullName: "ACME Club of IT",
   logo: "/images/acit-logo.jpg",
   tagline: "Together for IT",
+  githubRepo: "https://github.com/pie-1/acit-web",
   contact: {
     phone: "986-3767252",
     email: "acit@acme.edu.np",

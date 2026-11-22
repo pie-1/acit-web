@@ -2,14 +2,18 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useScroll, useSpring } from "framer-motion";
-import { FiMenu, FiX } from "react-icons/fi";
+import { FiMenu, FiX, FiLogOut, FiUser } from "react-icons/fi";
+import { FaGithub } from "react-icons/fa";
 import { SITE_CONFIG, NAV_LINKS } from "@/config/constants";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [solid, setSolid] = useState(false);
   const { pathname } = useLocation();
+  const { user, logout } = useAuth();
   const { scrollYProgress } = useScroll();
   const bar = useSpring(scrollYProgress, { stiffness: 140, damping: 28 });
 
@@ -21,16 +25,6 @@ export function Navbar() {
   }, []);
 
   useEffect(() => setOpen(false), [pathname]);
-
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    const esc = (e) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", esc);
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", esc);
-    };
-  }, [open]);
 
   return (
     <header
@@ -44,7 +38,6 @@ export function Navbar() {
         className={`mx-auto flex max-w-7xl items-center justify-between px-6 transition-all duration-300 ${
           solid ? "h-14" : "h-16"
         }`}
-        aria-label="Main"
       >
         <Link to="/" className="flex items-center gap-2.5 font-heading text-lg font-bold">
           <img src={SITE_CONFIG.logo} alt="ACIT Logo" className="h-8 w-8 rounded-md object-contain" />
@@ -73,7 +66,6 @@ export function Navbar() {
                       <motion.span
                         layoutId="nav-pill"
                         className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-acit-teal"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
                       />
                     )}
                   </>
@@ -84,12 +76,52 @@ export function Navbar() {
         </ul>
 
         <div className="flex items-center gap-2">
+          <a
+            href={SITE_CONFIG.githubRepo}
+            target="_blank"
+            rel="noreferrer"
+            className="hidden md:grid h-9 w-9 place-items-center rounded-lg text-[var(--acit-muted)] hover:text-[var(--acit-text)] transition-colors"
+            aria-label="GitHub repository"
+          >
+            <FaGithub size={18} />
+          </a>
+
           <ThemeToggle />
+
+          {user ? (
+            <div className="hidden md:flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--acit-surface)] border border-[var(--acit-border)]">
+                <FiUser size={14} className="text-acit-teal" />
+                <span className="text-sm font-medium">{user.name}</span>
+                {user.role === "admin" && (
+                  <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-acit-orange/20 text-acit-orange font-bold">
+                    Admin
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={logout}
+                className="p-2 rounded-lg text-[var(--acit-muted)] hover:text-red-400 transition-colors"
+                aria-label="Logout"
+              >
+                <FiLogOut size={18} />
+              </button>
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center gap-2">
+              <Link to="/login">
+                <Button variant="ghost" size="sm">Login</Button>
+              </Link>
+              <Link to="/register">
+                <Button variant="primary" size="sm" className="rounded-full">Sign up</Button>
+              </Link>
+            </div>
+          )}
+
           <button
             className="grid h-10 w-10 place-items-center rounded-lg md:hidden"
             onClick={() => setOpen((o) => !o)}
             aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open}
           >
             {open ? <FiX size={22} /> : <FiMenu size={22} />}
           </button>
@@ -97,7 +129,6 @@ export function Navbar() {
       </nav>
 
       <motion.div
-        aria-hidden
         style={{ scaleX: bar }}
         className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-acit-teal to-[#D35400]"
       />
@@ -108,7 +139,6 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "calc(100svh - 56px)" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
             className="overflow-hidden md:hidden"
           >
             <ul className="space-y-1 px-6 pt-6">
@@ -132,6 +162,20 @@ export function Navbar() {
                   </NavLink>
                 </motion.li>
               ))}
+              {!user && (
+                <>
+                  <li>
+                    <Link to="/login" className="block w-full text-left rounded-xl px-3 py-3.5 font-heading text-2xl font-semibold">
+                      Login
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/register" className="block w-full text-left rounded-xl px-3 py-3.5 font-heading text-2xl font-semibold text-acit-teal">
+                      Sign up
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </motion.div>
         )}

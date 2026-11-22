@@ -1,12 +1,9 @@
 // src/components/home/HeroField.jsx
-// A living dot-grid with drifting code glyphs. The grid lights up (teal to orange) around the pointer,
-// clicks send out a ring, and touch screens get a slow scanner that roams by itself.
-// It reads its colour from the page theme, so light and dark both work, and it replaces tsparticles.
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "framer-motion";
 
-const GAP = 34;
-const REACH = 190;
+const GAP = 40;
+const REACH = 200;
 const TEAL = [15, 138, 133];
 const ORANGE = [211, 84, 0];
 const GLYPHS = ["{}", "</>", "git", "npm", "0x", "=>", "01", ";", "fn()", "&&", "#!", "[]"];
@@ -20,12 +17,11 @@ export default function HeroField({ className = "" }) {
   useEffect(() => {
     const canvas = ref.current;
     const ctx = canvas.getContext("2d");
-    const touch = window.matchMedia("(hover: none)").matches;
     let W = 0, H = 0, dpr = 1, raf = 0, visible = true, last = performance.now();
-    let ink = [139, 148, 158];
+    let ink = [139, 148, 158]; 
     let glyphs = [];
     const ripples = [];
-    const p = { x: -999, y: -999, tx: -999, ty: -999, on: 0, want: 0, seen: false, idleSince: performance.now() };
+    const p = { x: -999, y: -999, tx: -999, ty: -999, on: 0, want: 0, seen: false };
 
     const readInk = () => {
       const m = getComputedStyle(canvas).color.match(/[\d.]+/g);
@@ -47,7 +43,7 @@ export default function HeroField({ className = "" }) {
         depth: 0.4 + Math.random() * 0.6,
         t: GLYPHS[i % GLYPHS.length],
         c: i % 3 === 0 ? TEAL : i % 3 === 1 ? ORANGE : null,
-        a: 0.1 + Math.random() * 0.16,
+        a: 0.15 + Math.random() * 0.2, // Increased base opacity
         ox: 0,
         oy: 0,
       }));
@@ -63,13 +59,11 @@ export default function HeroField({ className = "" }) {
       if (!p.seen || !p.want) { p.x = p.tx; p.y = p.ty; }
       p.seen = true;
       p.want = 1;
-      p.idleSince = performance.now();
     };
     const onLeave = () => (p.want = 0);
     const onClick = (e) => {
       if (e.target.closest?.("a,button")) return;
       const r = canvas.getBoundingClientRect();
-      if (e.clientY < r.top || e.clientY > r.bottom) return;
       ripples.push({ x: e.clientX - r.left, y: e.clientY - r.top, t0: performance.now() / 1000 });
       if (ripples.length > 5) ripples.shift();
     };
@@ -81,9 +75,8 @@ export default function HeroField({ className = "" }) {
       if (!visible && !once) return;
       const t = ts / 1000;
 
-      // a roaming scanner for touch screens, and for a desktop visitor who has not moved the mouse yet
-      if (!reduce && (touch || (!p.seen && ts > 1500))) {
-        p.tx = W * (0.5 + 0.28 * Math.sin(t * 0.35)) ;
+      if (!reduce && (!p.seen && ts > 1500)) {
+        p.tx = W * (0.5 + 0.28 * Math.sin(t * 0.35));
         p.ty = H * (0.5 + 0.22 * Math.sin(t * 0.52 + 1));
         if (!p.want) { p.x = p.tx; p.y = p.ty; }
         p.want = 1;
@@ -104,8 +97,8 @@ export default function HeroField({ className = "" }) {
       ripples.length = 0;
       ripples.push(...live);
 
-      // pass 1: every quiet dot in one path
-      ctx.fillStyle = rgba(ink, 0.2);
+      // Draw quiet grid dots
+      ctx.fillStyle = rgba(ink, 0.25); // Slightly higher opacity
       ctx.beginPath();
       const hot = [];
       for (let j = 0; j < rows; j++) {
@@ -130,17 +123,17 @@ export default function HeroField({ className = "" }) {
       }
       ctx.fill();
 
-      // pass 2: the dots the pointer or a ripple has reached
+      // Draw reactive dots
       for (let k = 0; k < hot.length; k += 4) {
         const f = hot[k + 2];
         const ring = hot[k + 3];
         const c = ring > f ? mix(TEAL, ORANGE, Math.min(1, ring * 1.2)) : mix(mix(ink, TEAL, Math.min(1, f * 2.2)), ORANGE, Math.max(0, f - 0.55) * 2);
         const s = 2 + 3.4 * f + 4.5 * ring;
-        ctx.fillStyle = rgba(c, Math.min(0.95, 0.2 + 0.7 * f + 0.8 * ring));
+        ctx.fillStyle = rgba(c, Math.min(1, 0.3 + 0.7 * f + 0.8 * ring));
         ctx.fillRect(hot[k] - s / 2, hot[k + 1] - s / 2, s, s);
       }
 
-      // drifting glyphs
+      // Draw floating glyphs
       ctx.font = "500 13px ui-monospace, SFMono-Regular, Menlo, monospace";
       ctx.textBaseline = "middle";
       for (const g of glyphs) {
@@ -163,11 +156,12 @@ export default function HeroField({ className = "" }) {
         }
         const edge = Math.min(1, py / 90, (H - py) / 90);
         ctx.font = `500 ${g.size}px ui-monospace, SFMono-Regular, Menlo, monospace`;
-        ctx.fillStyle = rgba(g.c || ink, g.a * Math.max(0, edge) * (g.c ? 1.4 : 1));
+        // FIX: Use slightly higher opacity for better visibility in both themes
+        ctx.fillStyle = rgba(g.c || ink, Math.min(0.6, g.a * Math.max(0, edge) * (g.c ? 1.5 : 1)));
         ctx.fillText(g.t, px, py);
       }
 
-      // the scanner ring and its readout
+      // Scanner ring
       if (p.on > 0.05 && !reduce) {
         ctx.strokeStyle = rgba(TEAL, 0.35 * p.on);
         ctx.lineWidth = 1;
@@ -180,10 +174,6 @@ export default function HeroField({ className = "" }) {
         ctx.moveTo(p.x, p.y - 46); ctx.lineTo(p.x, p.y - 24);
         ctx.moveTo(p.x, p.y + 24); ctx.lineTo(p.x, p.y + 46);
         ctx.stroke();
-        ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, monospace";
-        ctx.fillStyle = rgba(TEAL, 0.7 * p.on);
-        ctx.textBaseline = "alphabetic";
-        ctx.fillText(`x:${Math.round(p.x)} y:${Math.round(p.y)}`, p.x + 40, p.y - 40);
       }
     }
 
@@ -192,7 +182,6 @@ export default function HeroField({ className = "" }) {
     ro.observe(canvas);
     const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting));
     io.observe(canvas);
-    // follow the site theme (the toggle changes a class or data attribute on <html>)
     const mo = new MutationObserver(() => requestAnimationFrame(() => { readInk(); if (reduce) frame(performance.now(), true); }));
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme", "style"] });
 
@@ -212,6 +201,5 @@ export default function HeroField({ className = "" }) {
     };
   }, [reduce]);
 
-  // the colour class gives the canvas its ink: it follows --acit-muted in both themes
   return <canvas ref={ref} aria-hidden className={`pointer-events-none text-[var(--acit-muted)] ${className}`} />;
 }
